@@ -1,6 +1,13 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from rest_framework import generics
+from .models import * 
+from .serializers import * 
 
-def index(request):
-    return HttpResponse("hola mundo cruel sopa")
-# Create your views here.
+
+class ProcessList(generics.ListCreateAPIView):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
+
+
+class ProcessDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Process.objects.all()
+    serializer_class = ProcessSerializer
