@@ -3,7 +3,7 @@ from .models import *
 class ProcessAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model=ProcessAssignment
-        fields=("process","employee")
+        fields=("process","developer")
 
 class ProcessSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,9 +15,9 @@ class ProcessSerializer(serializers.ModelSerializer):
             "state",
         )
 
-class DeveloperSerializer(serializers.ModelSerializer):
+class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Developer 
+        model = Employee 
         fields = (
             "name",
             "last_name",

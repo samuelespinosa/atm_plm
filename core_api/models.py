@@ -1,43 +1,68 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+class CustomUser(AbstractUser):
+    def __str__(self):
+        return self.username
+    pass
+
+class UserProfile(models.Model):
+    TYPE_CHOICES = ( 
+        ('developer', 'Developer'),
+        ('customer', 'Customer'),
+        ('marketing', 'marketing'),
+    )
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    type_of_user = models.CharField(max_length=10,choices=TYPE_CHOICES)
 
 class Customer(models.Model):
-    name = models.CharField('Nombre', max_length=30)
-    city = models.CharField('Ciudad', max_length=50)
-    email = models.EmailField('Correo',unique=True)
-    country = models.CharField('País', max_length=100)  
-
-class Developer(models.Model):
-    name = models.CharField('Nombre', max_length=30)
-    last_name = models.CharField('Apellidos', max_length=60)
-    cc = models.CharField('Cédula', max_length=20,unique=True)  
-    process= models.ManyToManyField('Process', through='ProcessAssignment', related_name='developers')  
+    profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE)
+    city = models.CharField( max_length=50)
+    phone = models.CharField(max_length=20)  
+    country = models.CharField(max_length=100)  
+    def clean(self):
+        super().clean()
+        profile = self.profile
+        if profile.type_of_user != 'customer':
+            raise ValidationError({'profile': 'Customer can only be created for Customer user types.'})
+        if profile.user.is_superuser:
+            raise  ValidationError({'profile': 'A Customer can not be a super user'})
+class Employee(models.Model):
+    profile = models.OneToOneField(UserProfile, on_delete=models.CASCADE) 
+    id_number = models.CharField( max_length=20,unique=True)  
+    process= models.ManyToManyField('Process', through='ProcessAssignment', related_name='developers')
+    def clean(self):
+        super().clean()
+        profile = self.profile
+        if profile.type_of_user not in ('developer', 'marketing'):
+            raise ValidationError({'profile': 'Employees can only be created for Developer or Marketing user types.'})
 
 class Process(models.Model):
     STATE_CHOICES = (
-        ('planning', 'Planeando'),
-        ('developing', 'En Desarrollo'),
-        ('maintaining', 'En mantenimiento'),
-        ('finished', 'Finalizado'),
-        ('abandoned', 'Abandonado'),
+        ('planning', 'Planning'),
+        ('developing', 'Developing'),
+        ('maintaining', 'Maintaining'),
+        ('finished', 'Finished'),
+        ('abandoned', 'Abandoned'),
     )
 
-    date_in = models.DateTimeField("Fecha de entrada")  
-    date_out = models.DateTimeField("Fecha de finalización",blank=True)  
-    date_start = models.DateTimeField("Fecha de inicio")  
-    state = models.CharField('Estado', max_length=11, choices=STATE_CHOICES, default='planning')
+    date_in = models.DateTimeField()  
+    date_out = models.DateTimeField(blank=True)  
+    date_start = models.DateTimeField()  
+    state = models.CharField( max_length=11, choices=STATE_CHOICES, default='planning')
     bill = models.ForeignKey('Bill', on_delete=models.CASCADE)  
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    developer = models.ManyToManyField('Developer', related_name='assigned_processes')
+    developer = models.ManyToManyField(Employee,related_name='assigned_processes')
     class Meta:
         verbose_name = "Process"  # Optional, but useful for singular display
         verbose_name_plural = "Processes"  # Ensures plural form is shown in the admin
 
 class Bill(models.Model):
     STATE_CHOICES = (
-        ('estimating', 'Estimando'),
-        ('paid', 'Pagado'),
-        ('partially_paid', 'Parcialmente Pagado'),
-        ('not_paid', 'Sin pagar'),
+        ('estimating','Estimating' ),
+        ('paid', 'Paid'),
+        ('partially_paid', 'Partially_paid'),
+        ('not_paid', 'Not paid'),
     )
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)  
@@ -46,5 +71,5 @@ class Bill(models.Model):
 
 class ProcessAssignment(models.Model):
     process = models.ForeignKey(Process, on_delete=models.CASCADE)
-    developer = models.ForeignKey(Developer, on_delete=models.CASCADE)
+    developer = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
