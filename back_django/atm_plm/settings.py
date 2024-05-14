@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders'
 ]
-AUTH_USER_MODEL = "core_api.User"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
